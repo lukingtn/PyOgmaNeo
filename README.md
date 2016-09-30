@@ -12,7 +12,7 @@
 
 PyOgmaNeo contains Python [SWIG](http://www.swig.org/) bindings to the main [OgmaNeo](https://github.com/ogmacorp/OgmaNeo) C++ library.
 
-These bindings provide an interface into the C++ library. Allowing Python scripts to gain access to the OgmaNeo CPU and GPU accelerated algorithms. Implementation(s) of Online Predicive Hierarchies, as described in arXiv.org paper: [Feynman Machine: The Universal Dynamical Systems Computer](http://arxiv.org/abs/1609.03971).
+These bindings provide an interface into the C++ library. Allowing Python scripts to gain access to the OgmaNeo CPU and GPU accelerated algorithms. Implementation(s) of Online Predictive Hierarchies, as described in arXiv.org paper: [Feynman Machine: The Universal Dynamical Systems Computer](http://arxiv.org/abs/1609.03971).
 
 ## Installation
 
