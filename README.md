@@ -124,6 +124,6 @@ Refer to the PyOgmaNeo [CONTRIBUTING.md](https://github.com/ogmacorp/PyOgmaNeo/b
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />The work in this repository is licensed under the <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>. See the [PYOGMANEO_LICENSE.md](https://github.com/ogmacorp/PyOgmaNeo/blob/master/PYOGMANEO_LICENSE.md) and [LICENSE.md](https://github.com/ogmacorp/PyOgmaNeo/blob/master/LICENSE.md) file for further information.
 
-Contact Ogma Intelligent Systems Corp [licenses@ogmacorp.com](licenses@ogmacorp.com) to discuss commercial use and licensing options.
+Contact Ogma Intelligent Systems Corp licenses@ogmacorp.com to discuss commercial use and licensing options.
 
 PyOgmanNeo Copyright (c) 2016 [Ogma Intelligent Systems Corp](https://ogmacorp.com). All rights reserved.
