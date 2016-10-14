@@ -109,28 +109,29 @@ class build_ext_subclass(build_ext):
         extra_cmake_args = shlex.split(self.extra_cmake_args)
         cmake_command = ['cmake'] + extra_cmake_args
 
-        if sys.platform == 'win32':
-            # If no cmake generator is specified, determine which Microsoft
-            # Visual C/C++ environment to use based on the Python version
-            # Src: https://wiki.python.org/moin/WindowsCompilers
-            if "-G" not in self.extra_cmake_args:
-                cmake_generator = ''
+        if "-G" not in self.extra_cmake_args:
+            cmake_generator = 'Unix Makefiles'
+
+            if sys.platform == 'darwin':
+                cmake_generator = 'Xcode'
+
+            elif sys.platform == 'win32':
                 if sys.version_info.major < 3 or (sys.version_info.major == 3 and sys.version_info.minor <= 2):
-                    cmake_generator = 'Visual Studio 9 2008'
+                    cmake_generator = 'MinGW Makefiles'
                 else:
                     if sys.version_info.major == 3 and (sys.version_info.minor == 3 or sys.version_info.minor == 4):
                         cmake_generator = 'Visual Studio 10 2010'
                     else:
                         cmake_generator = 'Visual Studio 14 2015'
-                if is64bit:
-                    cmake_generator += ' Win64'
+                    if is64bit:
+                        cmake_generator += ' Win64'
 
-                cmake_command += ['-G', cmake_generator]
+            cmake_command += ['-G', cmake_generator]
 
         cmake_command.append(source)
         subprocess.call(cmake_command)
 
-        if sys.platform == 'win32':
+        if sys.platform == 'win32' or sys.platform == 'darwin':
             self.spawn(['cmake', '--build', '.', '--target', 'install', '--config', build_type])
         else:
             self.spawn(['cmake', '--build', '.', '--config', build_type])
@@ -176,7 +177,7 @@ extension_mod = Extension(
 
 setup(
     name="ogmaneo",
-    version="1.0",
+    version="1.0.1",
     description="Python bindings for OgmaNeo library",
     long_description='https://github.com/ogmacorp/PyOgmaNeo',
     author='Ogma Intelligent Systems Corp',

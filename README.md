@@ -8,6 +8,8 @@
 
 # Python bindings for OgmaNeo
 
+[![Build Status](https://travis-ci.org/ogmacorp/PyOgmaNeo.svg?branch=master)](https://travis-ci.org/ogmacorp/PyOgmaNeo)
+
 ## Introduction
 
 PyOgmaNeo contains Python [SWIG](http://www.swig.org/) bindings to the main [OgmaNeo](https://github.com/ogmacorp/OgmaNeo) C++ library.
@@ -75,8 +77,9 @@ PyOgmaNeo has been tested using:
 
 | Distribution | Operating System (Compiler) |
 | --- | ---:|
-| Python 2.7 | Linux (GCC 4.9) |
-| Anaconda Python 2.7 3.4 & 3.5 | Linux (GCC 4.9) |
+| Python 2.7 | Linux (GCC 4.8+) |
+| Python 2.7 | Mac OSX |
+| Anaconda Python 2.7 3.4 & 3.5 | Linux (GCC 4.8+) |
 | Anaconda Python 3.5 | Windows (MSVC 2015) |
 
 Further information on Python compatible Windows compilers can be found [here](https://wiki.python.org/moin/WindowsCompilers).
