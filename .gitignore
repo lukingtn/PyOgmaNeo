@@ -141,6 +141,9 @@ ENV/
 # PyCharm cache
 .idea/
 
+# MacOS cache
+.DS_Store
+
 # SWIG generated files
 neo.py
 neo_wrap.cpp

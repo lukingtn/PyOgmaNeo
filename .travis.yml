@@ -1,0 +1,95 @@
+# PyOgmaNeo
+# Copyright(c) 2016 Ogma Intelligent Systems Corp. All rights reserved.
+#
+# This copy of PyOgmaNeo is licensed to you under the terms described
+# in the PyOGMANEO_LICENSE.md file included in this distribution.
+
+language: python
+
+sudo: required
+dist: trusty
+
+matrix:
+  include:
+  # https://docs.travis-ci.com/user/trusty-ci-environment/
+  # Ubuntu 14.04 Trusty Tahr
+  - os: linux
+    dist: trusty
+    python: 2.7
+  - os: linux
+    dist: trusty
+    python: 3.5
+
+  # https://docs.travis-ci.com/user/osx-ci-environment/
+  # OS X 10.11.6 (and Xcode 7.3.1)
+  - os: osx
+    language: generic
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      # C++11 compiler for Linux builds
+      - gcc-4.8
+      - g++-4.8
+
+cache:
+  directories:
+    - $HOME/.local
+    - $HOME/.cache/pip
+
+before_install:
+  # Install dependencies into $HOME/.local
+  - bash ./.travis/install_deps.sh
+  
+install:
+  # Install CMake v3.6 into $HOME/.local
+  - bash ./.travis/install_cmake.sh
+
+  # Install OpenCL (Linux - POCL driver, release_0_13)
+  - bash ./.travis/install_opencl.sh
+
+  # Install SWIG into $HOME/.local
+  - bash ./.travis/install_swig.sh
+
+  # Install dependancies for python
+  - pip install -r requirements.txt
+  
+script:
+  - if [ $TRAVIS_OS_NAME == 'linux' ]; then
+      export CC=gcc-4.8;
+      export CXX=g++-4.8;
+    fi
+
+  - echo Travis OS Name ... ${TRAVIS_OS_NAME}
+  - echo Travis build dir ... ${TRAVIS_BUILD_DIR}
+  - echo PATH var ... ${PATH}
+
+  - echo CMake Version ... $($HOME/.local/cmake/bin/cmake --version)
+  - echo SWIG Version ... $(swig -version)
+
+  - echo Python Version ... $(python --version)
+  - which python
+  - which pip
+
+  - python setup.py bdist_wheel
+
+  - cd dist/
+  - ls -l
+  - pip install $(ls)
+  - cd ..
+
+  - pip show ogmaneo
+
+  # Restrict module testing to Linux builds
+  - if [ $TRAVIS_OS_NAME == 'linux' ]; then
+      python ModuleTest.py;
+    fi
+
+notifications:
+  email:
+    recipients:
+      - rcrowder@ogmacorp.com
+    on_success: change
+    on_failure: always

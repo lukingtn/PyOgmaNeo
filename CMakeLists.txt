@@ -14,8 +14,16 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake/")
 
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(BITNESS 64)
+else()
+  set(BITNESS 32)
+endif()
+#message("Bitness: ${BITNESS}")
+
 set(OGMANEO_PATH "${CMAKE_BINARY_DIR}/3rdparty")
-include_directories("${OGMANEO_PATH}/include")
+include_directories(BEFORE "${OGMANEO_PATH}/include")
 link_directories("${OGMANEO_PATH}/lib")
 
 
@@ -29,7 +37,7 @@ if(OGMANEO_FOUND)
 else()
     message(STATUS "-- OgmaNeo will be downloaded and built from source")
 
-    if(WIN32)
+    if(WIN32 OR APPLE)
         set(OGMANEO_SHARED_LIBS False)
     else()
         set(OGMANEO_SHARED_LIBS True)
@@ -38,14 +46,15 @@ else()
     include(ExternalProject)
     ExternalProject_Add(OgmaNeo
         PREFIX OgmaNeo
-        GIT_REPOSITORY "https://github.com/ogmacorp/OgmaNeo.git"
+        GIT_REPOSITORY https://github.com/ogmacorp/ogmaneo.git
+        TIMEOUT 30
         CMAKE_ARGS
             "-DBUILD_SHARED_LIBS=${OGMANEO_SHARED_LIBS}"
             "-DCMAKE_INSTALL_PREFIX=${OGMANEO_PATH}"
     )
     set(OGMANEO_INCLUDE_DIRS "${OGMANEO_PATH}/include")
 
-    if(WIN32)
+    if(WIN32 OR APPLE)
         set(OGMANEO_LIBRARY "${OGMANEO_PATH}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}OgmaNeo${CMAKE_STATIC_LIBRARY_SUFFIX}")
     else()
         set(OGMANEO_LIBRARY "${OGMANEO_PATH}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}OgmaNeo${CMAKE_SHARED_LIBRARY_SUFFIX}")
@@ -56,26 +65,62 @@ include_directories(${OGMANEO_INCLUDE_DIRS})
 
 
 ############################################################################
-# Find OpenCL package
+# Find OpenCL include and libs
 
-#find_package(OPENCL REQUIRED)
-find_path(OpenCL_INCLUDE_DIRS
+#find_package(OpenCL REQUIRED)
+#include_directories(${OpenCL_INCLUDE_DIRS})
+
+find_path(OPENCL_INCLUDE_DIRS 
     NAMES OpenCL/cl.h CL/cl.h
-    HINTS /usr/local/include/ $ENV{AMDAPPSDKROOT}/include/
-)
-find_library(OpenCL_LIBRARIES
-    NAMES OpenCL
-    HINTS /usr/local/lib/ $ENV{AMDAPPSDKROOT}/lib/x86_64/
-    PATH_SUFFIXES ${PLATFORM}${BITNESS} ${BITNESS_SUFFIX}
+    HINTS
+        $ENV{AMDAPPSDKROOT}/include/
+        $ENV{INTELOCLSDKROOT}/include/
+        $ENV{CUDA_PATH}/include/
+        $ENV{OPENCL_ROOT}/include/
+    PATHS
+        /usr/include /usr/local/include/
 )
 
-if(OpenCL_INCLUDE_DIRS STREQUAL "" OR OpenCL_LIBRARIES STREQUAL "")
-    message(FATAL_ERROR "Could not locate OpenCL include & libs")
-else()
-    message(STATUS "Found existing OpenCL in ${OpenCL_INCLUDE_DIRS}")
+if(BITNESS EQUAL 64)
+    find_library(OPENCL_LIBRARIES
+        NAMES OpenCL
+        HINTS
+            $ENV{AMDAPPSDKROOT}/lib
+            $ENV{INTELOCLSDKROOT}/lib
+            $ENV{CUDA_PATH}/lib
+            $ENV{OPENCL_ROOT}/lib
+        PATH_SUFFIXES x86_64 x64
+        PATHS /usr/lib64 /usr/lib /usr/local/lib
+    )
+elseif(BITNESS EQUAL 32)
+    find_library(OPENCL_LIBRARIES
+        NAMES OpenCL
+        HINTS
+            $ENV{AMDAPPSDKROOT}/lib
+            $ENV{INTELOCLSDKROOT}/lib
+            $ENV{CUDA_PATH}/lib
+            $ENV{OPENCL_ROOT}/lib
+        PATH_SUFFIXES x86 Win32
+        PATHS /usr/lib32 /usr/lib /usr/local/lib
+    )
 endif()
 
-include_directories(${OpenCL_INCLUDE_DIRS})
+# Fall-back to find a POCL install
+if(OPENCL_LIBRARIES STREQUAL "")
+    find_library(OPENCL_LIBRARIES
+        NAMES pocl
+        HINTS $HOME/.local/pocl/lib /usr/lib64 /usr/lib /usr/local/lib
+    )
+endif()
+
+if(OPENCL_INCLUDE_DIRS STREQUAL "" OR OPENCL_LIBRARIES STREQUAL "")
+    message(FATAL_ERROR "Could not locate OpenCL include & libs")
+else()
+    message(STATUS "Found existing OpenCL in ${OPENCL_INCLUDE_DIRS}")
+    message(STATUS "Found existing OpenCL lib ${OPENCL_LIBRARIES}")
+endif()
+
+include_directories(${OPENCL_INCLUDE_DIRS})
 
 
 ############################################################################
@@ -87,6 +132,7 @@ include(${SWIG_USE_FILE})
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
+
 
 ############################################################################
 # Find Python package
@@ -153,7 +199,16 @@ if(ANACONDA_PYTHON_FOUND)
     set(PYTHON_LIBRARIES "${PYTHON_LIBRARY}")
     set(FOUND_PYTHONLIBS TRUE)
 else()
-    find_package(PythonLibs)
+    if(DEFINED ENV{TRAVIS} AND DEFINED ENV{TRAVIS_PYTHON_VERSION})
+        message(STATUS "Finding PythonLibs $ENV{TRAVIS_PYTHON_VERSION}")
+        if("$ENV{TRAVIS_PYTHON_VERSION}" STREQUAL "2.7")
+            find_package(PythonLibs $ENV{TRAVIS_PYTHON_VERSION})
+        else()
+            find_package(PythonLibs)
+        endif()
+    else()
+        find_package(PythonLibs)
+    endif()
 endif()
 
 include_directories(${PYTHON_INCLUDE_DIR})
@@ -163,14 +218,15 @@ include_directories(${PYTHON_INCLUDE_DIR})
 # Setup SWIG bindings
 
 set(CMAKE_SWIG_OUTDIR "${CMAKE_BINARY_DIR}")
-set(CMAKE_SWIG_FLAGS "-I\"${PYTHON_INCLUDE_DIR}\" -I\"${OpenCL_INCLUDE_DIRS}\" -I\"${OGMANEO_INCLUDE_DIRS}\"")
+set(CMAKE_SWIG_FLAGS "-I\"${PYTHON_INCLUDE_DIR}\" -I\"${OPENCL_INCLUDE_DIRS}\" -I\"${OGMANEO_INCLUDE_DIRS}\"")
 
 set_source_files_properties(ogmaneo.i PROPERTIES CPLUSPLUS ON)
 
 swig_add_module(ogmaneo python ogmaneo.i)
-swig_link_libraries(ogmaneo ${PYTHON_LIBRARIES} ${OpenCL_LIBRARIES} ${OGMANEO_LIBRARY})
+swig_link_libraries(ogmaneo ${PYTHON_LIBRARIES} ${OPENCL_LIBRARIES} ${OGMANEO_LIBRARY})
 
 if(NOT OGMANEO_FOUND)
+    add_dependencies(_ogmaneo OgmaNeo)
     set_property(TARGET _ogmaneo PROPERTY DEPENDS OgmaNeo)
     set(SWIG_MODULE_ogmaneo_EXTRA_DEPS OgmaNeo)
 endif()
